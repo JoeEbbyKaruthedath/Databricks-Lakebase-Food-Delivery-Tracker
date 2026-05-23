@@ -1,0 +1,6 @@
+.DS_Store
+Thumbs.db
+*.log
+
+# Local editor settings (optional — remove if you want to commit these)
+.cursor/

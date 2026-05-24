@@ -1,195 +1,181 @@
-# appkit-lakebase
+# FleetViz
 
-A Databricks App powered by [AppKit](https://databricks.github.io/appkit/), featuring React, TypeScript, and Tailwind CSS.
+A personal demo project: a delivery fleet tracker built on [Databricks AppKit](https://databricks.github.io/appkit/) and [Lakebase](https://docs.databricks.com/aws/en/database/postgres/) (Postgres on Databricks).
 
-**Enabled plugins:**
-- **Lakebase** -- Fully managed Postgres database for transactional (OLTP) workloads on Databricks
-- **Server** -- Express HTTP server with static file serving and Vite dev mode
+The app visualizes synthetic delivery events on a USA map and lets you scrub through time to see order positions change. Data is stored in Lakebase and served through an Express API.
+
+## Features
+
+- **Delivery tracker** — map view of in-progress and completed orders across US metros
+- **Timeline scrubber** — drag through time to replay fleet activity
+- **Filters** — narrow by time window, order ID, and event type
+- **Lakebase backend** — Postgres schema with seeded demo data (~10k events)
+- **Databricks Apps deployment** — bundle config for deploying to your workspace
+
+## Tech stack
+
+- **Backend:** Node.js, Express, AppKit Lakebase SDK
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS, Leaflet
+- **UI:** AppKit UI (Radix / shadcn-style components)
+- **Deploy:** Databricks Asset Bundles (DABs)
 
 ## Prerequisites
 
 - Node.js v22+ and npm
-- Databricks CLI (for deployment)
-- Access to a Databricks workspace
+- [Databricks CLI](https://docs.databricks.com/dev-tools/cli/) v0.239+
+- A Databricks workspace with Lakebase Postgres enabled
+- A Lakebase project with a branch and database (see [Lakebase docs](https://docs.databricks.com/aws/en/database/postgres/))
 
-## Databricks Authentication
-
-### Local Development
-
-For local development, configure your environment variables by creating a `.env` file:
+## Quick start (local)
 
 ```bash
+npm install
 cp .env.example .env
+# Edit .env with your Lakebase connection details
+npm run dev
 ```
 
-Edit `.env` and set the environment variables you need:
+Open http://localhost:8000/
+
+### Environment variables
+
+Copy `.env.example` to `.env` and fill in your values. **Do not commit `.env`.**
 
 ```env
 DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
+PGDATABASE=your_postgres_database
+LAKEBASE_ENDPOINT=your_postgres_endpoint_path
+PGHOST=your_postgres_host
+PGPORT=5432
+PGSSLMODE=require
 DATABRICKS_APP_PORT=8000
-# ... other environment variables, depending on the plugins you use
 ```
 
-#### Lakebase Configuration
+`PGUSER` is optional for local scripts — it is auto-detected from your Databricks CLI profile when omitted.
 
-The Lakebase plugin requires additional environment variables for PostgreSQL connectivity. To learn how to configure the Lakebase plugin, see the [Lakebase plugin documentation](https://databricks.github.io/appkit/docs/plugins/lakebase).
+See the [Lakebase plugin docs](https://databricks.github.io/appkit/docs/plugins/lakebase) for how to obtain connection values from your workspace.
 
-### CLI Authentication
+### Seed demo data
 
-The Databricks CLI requires authentication to deploy and manage apps. Configure authentication using one of these methods:
+After Lakebase is configured, load synthetic delivery events:
 
-#### OAuth U2M
+```bash
+npm run seed:delivery
+```
 
-Interactive browser-based authentication with short-lived tokens:
+Re-seed from scratch (truncates existing data):
+
+```bash
+npm run seed:delivery -- --force
+```
+
+Requires Databricks CLI auth (`databricks auth login` or a profile in `~/.databrickscfg`).
+
+## Databricks CLI authentication
+
+OAuth (recommended):
 
 ```bash
 databricks auth login --host https://your-workspace.cloud.databricks.com
 ```
 
-This will open your browser to complete authentication. The CLI saves credentials to `~/.databrickscfg`.
-
-#### Configuration Profiles
-
-Use multiple profiles for different workspaces:
+Or configure named profiles in `~/.databrickscfg`:
 
 ```ini
-[DEFAULT]
-host = https://dev-workspace.cloud.databricks.com
-
-[production]
-host = https://prod-workspace.cloud.databricks.com
-client_id = prod-client-id
-client_secret = prod-client-secret
+[demo]
+host = https://your-workspace.cloud.databricks.com
 ```
 
-Deploy using a specific profile:
+Use a profile when deploying:
 
 ```bash
-databricks bundle deploy --profile production
+databricks bundle deploy --profile demo
 ```
 
-**Note:** Personal Access Tokens (PATs) are legacy authentication. OAuth is strongly recommended for better security.
+## Deployment
 
-## Getting Started
+### 1. Configure the bundle
 
-### Install Dependencies
+Edit `databricks.yml` with your workspace and Lakebase resources. For a public repo, **avoid committing real workspace URLs or resource IDs** — use a CLI profile and pass variables at deploy time instead.
 
-```bash
-npm install
-```
-
-### Development
-
-Run the app in development mode with hot reload:
-
-```bash
-npm run dev
-```
-
-The app will be available at the URL shown in the console output.
-
-### Build
-
-Build both client and server for production:
-
-```bash
-npm run build
-```
-
-This creates:
-
-- `dist/server.js` - Compiled server bundle
-- `client/dist/` - Bundled client assets
-
-### Production
-
-Run the production build:
-
-```bash
-npm start
-```
-
-## Code Quality
-
-There are a few commands to help you with code quality:
-
-```bash
-# Type checking
-npm run typecheck
-
-# Linting
-npm run lint
-npm run lint:fix
-
-# Formatting
-npm run format
-npm run format:fix
-```
-
-## Deployment with Databricks Asset Bundles
-
-### 1. Configure Bundle
-
-Update `databricks.yml` with your workspace settings:
+Example target configuration:
 
 ```yaml
 targets:
   default:
+    default: true
     workspace:
-      host: https://your-workspace.cloud.databricks.com
+      profile: demo   # references ~/.databrickscfg, not a hardcoded host
 ```
 
-Make sure to replace all placeholder values in `databricks.yml` with your actual resource IDs.
-
-### 2. Validate Bundle
+Find your Lakebase branch and database names:
 
 ```bash
-databricks bundle validate
+databricks postgres list-branches projects/{project-id} --profile demo
+databricks postgres list-databases {branch-name} --profile demo
 ```
 
-### 3. Deploy
-
-Deploy to the default target:
+### 2. Validate and deploy
 
 ```bash
-databricks bundle deploy
+databricks bundle validate --profile demo \
+  --var postgres_branch=projects/your-project/branches/production \
+  --var postgres_database=projects/your-project/branches/production/databases/your-db
+
+databricks bundle deploy --profile demo \
+  --var postgres_branch=projects/your-project/branches/production \
+  --var postgres_database=projects/your-project/branches/production/databases/your-db
 ```
 
-### 4. Run
+### 3. Grant schema access to the deployed app
 
-Start the deployed app:
+If you seeded data before deploying, the app service principal may need read access to the `delivery` schema:
 
 ```bash
-databricks bundle run <APP_NAME> -t dev
+npm run grant:delivery-app
 ```
 
-### Deploy to Production
+Then refresh the deployed app URL.
 
-1. Configure the production target in `databricks.yml`
-2. Deploy to production:
+### 4. Run the app
 
 ```bash
-databricks bundle deploy -t prod
+databricks bundle run app --profile demo
 ```
 
-## Project Structure
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev server with hot reload |
+| `npm run build` | Production build (client + server) |
+| `npm start` | Run production build locally |
+| `npm run typecheck` | TypeScript check |
+| `npm run lint` / `npm run format` | Lint and format |
+| `npm run test:smoke` | Playwright smoke tests |
+| `npm run seed:delivery` | Seed Lakebase with demo delivery events |
+| `npm run grant:delivery-app` | Grant app service principal access to `delivery` schema |
+
+## Project structure
 
 ```
-* client/          # React frontend
-  * src/           # Source code
-  * public/        # Static assets
-* server/          # Express backend
-  * server.ts      # Server entry point
-  * routes/        # Routes
-* shared/          # Shared types
-* databricks.yml   # Bundle configuration
-* app.yaml         # App configuration
-* .env.example     # Environment variables example
+client/              React frontend (delivery map, timeline, filters)
+  src/pages/delivery/
+server/              Express API and Lakebase routes
+  routes/lakebase/
+scripts/             Seed data and permission helpers
+tests/               Playwright smoke tests
+databricks.yml       DABs bundle config
+app.yaml             Databricks App runtime config
+.env.example         Environment variable template (copy to .env)
 ```
 
-## Tech Stack
+## Security notes
 
-- **Backend**: Node.js, Express
-- **Frontend**: React.js, TypeScript, Vite, Tailwind CSS, React Router
-- **UI Components**: Radix UI, shadcn/ui
-- **Databricks**: AppKit SDK
+- Never commit `.env`, credentials, or personal access tokens.
+- Prefer CLI profiles (`~/.databrickscfg`) over hardcoded workspace hosts in `databricks.yml`.
+- Seed data is synthetic — no real customer or driver information.
+
+## License
+
+This project is provided as a personal portfolio demo. Add a license file (e.g. MIT) if you want to clarify reuse terms for others.

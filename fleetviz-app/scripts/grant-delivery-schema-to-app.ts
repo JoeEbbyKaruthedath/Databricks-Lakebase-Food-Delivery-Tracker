@@ -6,14 +6,29 @@ function profile() {
   return process.env.DATABRICKS_CONFIG_PROFILE ?? 'demo';
 }
 
-function getAppPostgresRole() {
-  const appJson = execSync(`databricks apps get fleetviz-app --profile ${profile()} -o json`, {
+function requireEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(
+      `Missing required env var ${name}. Set it in .env or export it before running grant:delivery-app.`,
+    );
+  }
+  return value;
+}
+
+function appName() {
+  return process.env.DATABRICKS_APP_NAME?.trim() || 'fleetviz-app';
+}
+
+function getAppPostgresRole(postgresBranch: string) {
+  const name = appName();
+  const appJson = execSync(`databricks apps get ${name} --profile ${profile()} -o json`, {
     encoding: 'utf8',
   });
   const clientId = JSON.parse(appJson).service_principal_client_id as string;
 
   const rolesJson = execSync(
-    `databricks postgres list-roles projects/fleetviz/branches/production --profile ${profile()} -o json`,
+    `databricks postgres list-roles ${postgresBranch} --profile ${profile()} -o json`,
     { encoding: 'utf8' },
   );
   const roles = JSON.parse(rolesJson) as Array<{
@@ -32,6 +47,8 @@ function getAppPostgresRole() {
 }
 
 async function main() {
+  const postgresBranch = requireEnv('POSTGRES_BRANCH');
+
   if (!process.env.PGUSER && !process.env.DATABRICKS_CLIENT_ID) {
     const userJson = execSync(`databricks current-user me --profile ${profile()} -o json`, {
       encoding: 'utf8',
@@ -39,7 +56,7 @@ async function main() {
     process.env.PGUSER = JSON.parse(userJson).userName as string;
   }
 
-  const appRole = getAppPostgresRole();
+  const appRole = getAppPostgresRole(postgresBranch);
   const pool = createLakebasePool();
 
   console.log(`[grant] Granting ${DELIVERY_SCHEMA} access to app role ${appRole}...`);

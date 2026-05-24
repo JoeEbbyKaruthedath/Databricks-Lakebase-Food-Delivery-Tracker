@@ -129,7 +129,7 @@ databricks bundle deploy --profile demo \
 
 ### 3. Grant schema access to the deployed app
 
-If you seeded data before deploying, the app service principal may need read access to the `delivery` schema:
+If you seeded data before deploying, the app service principal may need read access to the `delivery` schema. Set `POSTGRES_BRANCH` in `.env` (same value as `postgres_branch` in your bundle deploy), then run:
 
 ```bash
 npm run grant:delivery-app

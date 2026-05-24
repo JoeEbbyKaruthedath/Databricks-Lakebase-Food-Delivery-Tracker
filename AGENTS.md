@@ -1,6 +1,6 @@
 # FleetViz — Agent Dev Workflow
 
-Repository: personal portfolio clone (forked from Chera-AI/Databricks-Demo)
+Repository: [JoeEbbyKaruthedath/Databricks-Lakebase-Food-Delivery-Tracker](https://github.com/JoeEbbyKaruthedath/Databricks-Lakebase-Food-Delivery-Tracker)
 
 App code lives in `fleetviz-app/` (Databricks AppKit + Lakebase).
 
@@ -59,7 +59,8 @@ If you seeded **before** deploying the app, the deployed app may show “Failed 
 
 ```bash
 cd fleetviz-app
-npm run grant:delivery-app   # profile demo via .env or DATABRICKS_CONFIG_PROFILE
+# POSTGRES_BRANCH in .env must match your Lakebase branch resource name
+npm run grant:delivery-app
 ```
 
 Then refresh the deployed app URL.
@@ -67,9 +68,8 @@ Then refresh the deployed app URL.
 ## Databricks
 
 - **Profile:** `demo` (confirm with user if multiple profiles exist).
-- **Lakebase project:** `fleetviz`
-- **Validate bundle:** `databricks bundle validate --profile demo`
-- **Deploy:** `databricks bundle deploy --profile demo`
+- **Validate bundle:** `databricks bundle validate --profile demo --var postgres_branch=... --var postgres_database=...`
+- **Deploy:** `databricks bundle deploy --profile demo --var postgres_branch=... --var postgres_database=...`
 
 Deploy the app before relying on Lakebase schema permissions in production; see Databricks Lakebase docs for service-principal ownership.
 

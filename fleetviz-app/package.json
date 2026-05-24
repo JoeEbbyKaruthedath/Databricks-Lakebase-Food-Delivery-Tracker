@@ -26,7 +26,8 @@
     "sync": "appkit plugin sync --write --silent",
     "typegen": "appkit generate-types",
     "setup": "appkit setup --write",
-    "seed:delivery": "tsx --tsconfig ./tsconfig.server.json --env-file-if-exists=./.env ./scripts/seed-delivery-data.ts"
+    "seed:delivery": "tsx --tsconfig ./tsconfig.server.json --env-file-if-exists=./.env ./scripts/seed-delivery-data.ts",
+    "grant:delivery-app": "tsx --tsconfig ./tsconfig.server.json --env-file-if-exists=./.env ./scripts/grant-delivery-schema-to-app.ts"
   },
   "keywords": [],
   "author": "",

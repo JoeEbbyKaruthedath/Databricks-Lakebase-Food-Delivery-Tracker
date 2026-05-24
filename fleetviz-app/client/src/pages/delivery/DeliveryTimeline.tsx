@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@databricks/appkit-ui/react';
 import { ChevronLeft, ChevronRight, SkipBack, SkipForward } from 'lucide-react';
+import { DeliveryTimeSlider } from './DeliveryTimeSlider';
 import {
   EVENT_TYPE_ORDER,
   formatEventType,
@@ -8,8 +9,6 @@ import {
 } from '../../types/delivery';
 
 const HOUR_MS = 60 * 60 * 1000;
-/** 0–1000 gives smooth dragging without huge millisecond values (breaks native range inputs). */
-const SLIDER_STEPS = 1000;
 
 interface DeliveryTimelineProps {
   minTs: number;
@@ -32,15 +31,6 @@ export function DeliveryTimeline({
   orderCount,
   eventTypeCounts,
 }: DeliveryTimelineProps) {
-  const span = Math.max(maxTs - minTs, 1);
-  const percent = ((value - minTs) / span) * 100;
-  const sliderValue = Math.round((percent / 100) * SLIDER_STEPS);
-
-  const handleSlider = (nextSliderValue: number) => {
-    const ratio = nextSliderValue / SLIDER_STEPS;
-    onChange(minTs + ratio * span);
-  };
-
   const formatted = useMemo(
     () =>
       new Date(value).toLocaleString(undefined, {
@@ -74,27 +64,18 @@ export function DeliveryTimeline({
           </p>
         </div>
 
-        <div className="delivery-timeline-slider-wrap space-y-3 rounded-lg border border-border bg-muted/20 px-4 py-5">
+        <div className="delivery-timeline-slider-wrap space-y-3 rounded-lg border-2 border-border bg-muted/40 px-4 py-5">
           <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
             <span>{new Date(minTs).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span>
             <span>{new Date(maxTs).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span>
           </div>
 
-          <input
-            type="range"
-            min={0}
-            max={SLIDER_STEPS}
-            step={1}
-            value={sliderValue}
-            onInput={(e) => handleSlider(Number(e.currentTarget.value))}
-            onChange={(e) => handleSlider(Number(e.currentTarget.value))}
-            className="delivery-timeline-slider w-full touch-none"
-            style={{ '--slider-progress': `${percent}%` } as React.CSSProperties}
-            aria-label="Scrub delivery timeline"
-            aria-valuemin={minTs}
-            aria-valuemax={maxTs}
-            aria-valuenow={value}
-            aria-valuetext={formatted}
+          <DeliveryTimeSlider
+            minTs={minTs}
+            maxTs={maxTs}
+            value={value}
+            onChange={onChange}
+            ariaValueText={formatted}
           />
           <p className="text-center text-xs text-muted-foreground">Drag the handle to scrub through time</p>
         </div>

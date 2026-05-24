@@ -7,6 +7,15 @@ import 'leaflet/dist/leaflet.css';
 
 const USA_CENTER: [number, number] = [39.8283, -98.5795];
 
+/** Continental United States — keeps the map focused on USA only */
+const USA_BOUNDS: [[number, number], [number, number]] = [
+  [24.396308, -124.848974],
+  [49.384358, -66.885444],
+];
+
+const USA_MIN_ZOOM = 4;
+const USA_MAX_ZOOM = 12;
+
 const TILE_URLS = {
   light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
   dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
@@ -28,10 +37,7 @@ function createIcon(color: string, selected: boolean) {
   const selectedClass = selected ? ' delivery-marker--selected' : '';
   return L.divIcon({
     className: 'delivery-marker-wrap',
-    html: `<motion></motion><div class="delivery-marker${selectedClass}" style="width:${size}px;height:${size}px;background:${color};"></div>`.replace(
-      '<motion></motion>',
-      '',
-    ),
+    html: `<div class="delivery-marker${selectedClass}" style="width:${size}px;height:${size}px;background:${color};"></div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
@@ -41,12 +47,15 @@ function FitBounds({ positions }: { positions: DeliveryEvent[] }) {
   const map = useMap();
 
   useEffect(() => {
+    const usaBounds = L.latLngBounds(USA_BOUNDS);
+
     if (positions.length === 0) {
-      map.setView(USA_CENTER, 4);
+      map.fitBounds(usaBounds);
       return;
     }
-    const bounds = L.latLngBounds(positions.map((p) => [p.loc_lat, p.loc_lon]));
-    map.fitBounds(bounds.pad(0.15), { maxZoom: 12 });
+
+    const markerBounds = L.latLngBounds(positions.map((p) => [p.loc_lat, p.loc_lon]));
+    map.fitBounds(markerBounds.pad(0.15), { maxZoom: USA_MAX_ZOOM });
   }, [map, positions]);
 
   return null;
@@ -62,7 +71,16 @@ interface DeliveryMapProps {
 export function DeliveryMap({ positions, selectedOrderId, onSelectOrder, theme }: DeliveryMapProps) {
   return (
     <div className="h-[520px] w-full rounded-lg overflow-hidden border border-border">
-      <MapContainer center={USA_CENTER} zoom={4} className="h-full w-full" scrollWheelZoom>
+      <MapContainer
+        center={USA_CENTER}
+        zoom={USA_MIN_ZOOM}
+        minZoom={USA_MIN_ZOOM}
+        maxZoom={USA_MAX_ZOOM}
+        maxBounds={USA_BOUNDS}
+        maxBoundsViscosity={1.0}
+        className="h-full w-full"
+        scrollWheelZoom
+      >
         <TileLayer
           key={theme}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'

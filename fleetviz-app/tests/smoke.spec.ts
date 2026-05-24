@@ -15,11 +15,6 @@ interface PluginPage {
 }
 
 const PLUGIN_PAGES: Record<string, PluginPage> = {
-  delivery: {
-    navLabel: 'Delivery',
-    path: '/delivery',
-    expectedTexts: ['Delivery Tracker', 'Point in time'],
-  },
   genie: {
     navLabel: 'Genie',
     path: '/genie',
@@ -39,19 +34,12 @@ let consoleErrors: string[] = [];
 let pageErrors: string[] = [];
 let failedRequests: string[] = [];
 
-test('smoke test - app loads and displays home page', async ({ page }) => {
+test('smoke test - app loads delivery tracker landing page', async ({ page }) => {
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: APP_CONFIG.name })).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'Welcome to FleetViz' }),
-  ).toBeVisible();
-  await expect(page.getByText('Delivery Tracker')).toBeVisible();
-
-  await expect(page.getByRole('link', { name: 'Home' })).toBeVisible();
-  for (const [, plugin] of enabledPages) {
-    await expect(page.getByRole('link', { name: plugin.navLabel })).toBeVisible();
-  }
+  await expect(page.getByRole('heading', { name: 'Delivery Tracker' })).toBeVisible();
+  await expect(page.getByText('Point in time')).toBeVisible();
 });
 
 for (const [name, plugin] of enabledPages) {

@@ -39,7 +39,8 @@ test('smoke test - app loads delivery tracker landing page', async ({ page }) =>
 
   await expect(page.getByRole('heading', { name: APP_CONFIG.name })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Delivery Tracker' })).toBeVisible();
-  await expect(page.getByText('Point in time')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Timeline' })).toBeVisible();
+  await expect(page.getByLabel('Scrub delivery timeline')).toBeVisible();
 });
 
 for (const [name, plugin] of enabledPages) {

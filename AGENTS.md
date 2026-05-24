@@ -55,6 +55,15 @@ npm run seed:delivery -- --force # truncate and reseed
 
 Requires Databricks CLI auth (`--profile demo` or `DATABRICKS_CONFIG_PROFILE` in `.env`).
 
+If you seeded **before** deploying the app, the deployed app may show “Failed to load metadata” until the app service principal can read the `delivery` schema:
+
+```bash
+cd fleetviz-app
+npm run grant:delivery-app   # profile demo via .env or DATABRICKS_CONFIG_PROFILE
+```
+
+Then refresh the deployed app URL.
+
 ## Databricks
 
 - **Profile:** `demo` (confirm with user if multiple profiles exist).

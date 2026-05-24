@@ -5,7 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@databricks/appkit-ui/react';
-import { LakebasePage } from './pages/lakebase/LakebasePage';
+import { DeliveryPage } from './pages/delivery/DeliveryPage';
+import { ThemeToggle } from './components/ThemeToggle';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
@@ -19,14 +20,15 @@ function Layout() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b px-6 py-3 flex items-center gap-4">
         <h1 className="text-lg font-semibold text-foreground">FleetViz</h1>
-        <nav className="flex gap-1">
+        <nav className="flex gap-1 flex-1">
           <NavLink to="/" end className={navLinkClass}>
             Home
           </NavLink>
-          <NavLink to="/lakebase" className={navLinkClass}>
-            Lakebase
+          <NavLink to="/delivery" className={navLinkClass}>
+            Delivery
           </NavLink>
         </nav>
+        <ThemeToggle />
       </header>
 
       <main className="flex-1 p-6">
@@ -41,7 +43,7 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { path: '/', element: <HomePage /> },
-      { path: '/lakebase', element: <LakebasePage /> },
+      { path: '/delivery', element: <DeliveryPage /> },
     ],
   },
 ]);
@@ -58,38 +60,25 @@ function HomePage() {
           Welcome to FleetViz
         </h2>
         <p className="text-lg text-muted-foreground">
-          Fleet management powered by Databricks Lakebase
+          USA food delivery tracking powered by Databricks Lakebase
         </p>
       </div>
 
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
+          <CardTitle>Delivery Tracker</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">Your app is ready. Explore the resources below to continue building.</p>
-          <ul className="space-y-2 text-sm">
-            <li>
-              <a
-                href="https://github.com/databricks/appkit"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline underline-offset-4 hover:text-primary/80"
-              >
-                AppKit on GitHub →
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://databricks.github.io/appkit/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline underline-offset-4 hover:text-primary/80"
-              >
-                AppKit documentation →
-              </a>
-            </li>
-          </ul>
+          <p className="text-sm text-muted-foreground">
+            View ~10,000 synthetic delivery events across US metros. Scrub the timeline
+            to see where every order was at any point in time.
+          </p>
+          <NavLink
+            to="/delivery"
+            className="inline-flex text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+          >
+            Open Delivery Tracker →
+          </NavLink>
         </CardContent>
       </Card>
     </div>

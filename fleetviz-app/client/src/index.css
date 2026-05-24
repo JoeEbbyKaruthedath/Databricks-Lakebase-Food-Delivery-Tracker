@@ -40,6 +40,55 @@
   --sidebar-ring: oklch(0.705 0.015 286.067); */
 }
 
+.delivery-marker-wrap {
+  background: transparent !important;
+  border: none !important;
+}
+
+.delivery-marker {
+  border-radius: 50%;
+  border: 2px solid hsl(var(--background));
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+}
+
+.delivery-marker--selected {
+  border-color: hsl(var(--foreground));
+  box-shadow: 0 0 0 2px hsl(var(--ring));
+}
+
+.delivery-timeline-slider {
+  height: 0.5rem;
+  appearance: none;
+  border-radius: 9999px;
+  background: hsl(var(--muted));
+  cursor: pointer;
+}
+
+.delivery-timeline-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  border: 2px solid hsl(var(--background));
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+}
+
+.delivery-timeline-slider::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  border: 2px solid hsl(var(--background));
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     /* --background: oklch(0.141 0.005 285.823);

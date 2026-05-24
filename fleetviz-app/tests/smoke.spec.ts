@@ -5,9 +5,7 @@ import { join } from 'node:path';
 // ── Templated configuration (resolved by `databricks apps init`) ────────────
 const APP_CONFIG = {
   name: 'FleetViz',
-  plugins: [
-    'lakebase',
-  ],
+  plugins: ['delivery'],
 } as const;
 
 interface PluginPage {
@@ -17,15 +15,10 @@ interface PluginPage {
 }
 
 const PLUGIN_PAGES: Record<string, PluginPage> = {
-  analytics: {
-    navLabel: 'Analytics',
-    path: '/analytics',
-    expectedTexts: ['SQL Query Result', 'Sales Data Filter'],
-  },
-  lakebase: {
-    navLabel: 'Lakebase',
-    path: '/lakebase',
-    expectedTexts: ['Todo List'],
+  delivery: {
+    navLabel: 'Delivery',
+    path: '/delivery',
+    expectedTexts: ['Delivery Tracker', 'Point in time'],
   },
   genie: {
     navLabel: 'Genie',
@@ -53,7 +46,7 @@ test('smoke test - app loads and displays home page', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Welcome to FleetViz' }),
   ).toBeVisible();
-  await expect(page.getByText('Getting Started')).toBeVisible();
+  await expect(page.getByText('Delivery Tracker')).toBeVisible();
 
   await expect(page.getByRole('link', { name: 'Home' })).toBeVisible();
   for (const [, plugin] of enabledPages) {

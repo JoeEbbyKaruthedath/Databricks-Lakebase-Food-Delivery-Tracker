@@ -178,4 +178,4 @@ app.yaml             Databricks App runtime config
 
 ## License
 
-This project is provided as a personal portfolio demo. Add a license file (e.g. MIT) if you want to clarify reuse terms for others.
+MIT — see [LICENSE](LICENSE).

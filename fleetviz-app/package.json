@@ -31,7 +31,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "Unlicensed",
+  "license": "MIT",
   "description": "Node.js app with Lakebase Autoscaling (Postgres) CRUD operations",
   "dependencies": {
     "@databricks/appkit": "0.21.0",

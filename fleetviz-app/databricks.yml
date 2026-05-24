@@ -29,8 +29,5 @@ targets:
   default:
     default: true
     workspace:
-      host: https://dbc-4cea6492-fcc4.cloud.databricks.com
-
-    variables:
-      postgres_branch: projects/fleetviz/branches/production
-      postgres_database: projects/fleetviz/branches/production/databases/databricks-postgres
+      # Uses ~/.databrickscfg — do not commit workspace hosts or secrets here.
+      profile: demo

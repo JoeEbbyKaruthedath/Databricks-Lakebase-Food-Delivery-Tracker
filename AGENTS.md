@@ -1,6 +1,6 @@
 # FleetViz — Agent Dev Workflow
 
-Repository: [Chera-AI/Databricks-Demo](https://github.com/Chera-AI/Databricks-Demo)
+Repository: personal portfolio clone (forked from Chera-AI/Databricks-Demo)
 
 App code lives in `fleetviz-app/` (Databricks AppKit + Lakebase).
 

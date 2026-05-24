@@ -1,8 +1,10 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { DeliveryEvent } from '../../types/delivery';
-import { formatEventType } from '../../types/delivery';
+import { formatEventType, getEventTypeColor } from '../../types/delivery';
+import { DeliveryMapLegend } from './DeliveryMapLegend';
+import { spreadMapPositions } from './map-utils';
 import 'leaflet/dist/leaflet.css';
 
 const USA_CENTER: [number, number] = [39.8283, -98.5795];
@@ -15,25 +17,15 @@ const USA_BOUNDS: [[number, number], [number, number]] = [
 
 const USA_MIN_ZOOM = 4;
 const USA_MAX_ZOOM = 12;
+const NATIONAL_VIEW_MAX_ZOOM = 6;
 
 const TILE_URLS = {
   light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
   dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
 } as const;
 
-const STATUS_COLORS: Record<string, string> = {
-  order_placed: '#6366f1',
-  driver_assigned: '#8b5cf6',
-  en_route_to_restaurant: '#a855f7',
-  at_restaurant: '#f59e0b',
-  picked_up: '#f97316',
-  in_transit: '#3b82f6',
-  near_destination: '#14b8a6',
-  delivered: '#22c55e',
-};
-
-function createIcon(color: string, selected: boolean) {
-  const size = selected ? 14 : 10;
+function createIcon(color: string, selected: boolean, stackSize: number) {
+  const size = selected ? 16 : stackSize > 1 ? 12 : 10;
   const selectedClass = selected ? ' delivery-marker--selected' : '';
   return L.divIcon({
     className: 'delivery-marker-wrap',
@@ -43,20 +35,42 @@ function createIcon(color: string, selected: boolean) {
   });
 }
 
-function FitBounds({ positions }: { positions: DeliveryEvent[] }) {
+function FitBounds({
+  points,
+  selectedOrderId,
+}: {
+  points: Array<{ lat: number; lon: number }>;
+  selectedOrderId: string | null;
+}) {
   const map = useMap();
 
   useEffect(() => {
     const usaBounds = L.latLngBounds(USA_BOUNDS);
 
-    if (positions.length === 0) {
+    if (points.length === 0) {
       map.fitBounds(usaBounds);
       return;
     }
 
-    const markerBounds = L.latLngBounds(positions.map((p) => [p.loc_lat, p.loc_lon]));
-    map.fitBounds(markerBounds.pad(0.15), { maxZoom: USA_MAX_ZOOM });
-  }, [map, positions]);
+    const markerBounds = L.latLngBounds(points.map((p) => [p.lat, p.lon]));
+    const latSpan = markerBounds.getNorth() - markerBounds.getSouth();
+    const lonSpan = markerBounds.getEast() - markerBounds.getWest();
+    const isTinyCluster = latSpan < 0.05 && lonSpan < 0.05;
+
+    if (selectedOrderId && points.length === 1) {
+      map.setView([points[0].lat, points[0].lon], Math.min(10, USA_MAX_ZOOM));
+      return;
+    }
+
+    if (isTinyCluster) {
+      map.setView(markerBounds.getCenter(), Math.min(8, USA_MAX_ZOOM));
+      return;
+    }
+
+    map.fitBounds(markerBounds.pad(0.08), {
+      maxZoom: points.length > 20 ? NATIONAL_VIEW_MAX_ZOOM : USA_MAX_ZOOM,
+    });
+  }, [map, points, selectedOrderId]);
 
   return null;
 }
@@ -69,8 +83,10 @@ interface DeliveryMapProps {
 }
 
 export function DeliveryMap({ positions, selectedOrderId, onSelectOrder, theme }: DeliveryMapProps) {
+  const displayPoints = useMemo(() => spreadMapPositions(positions), [positions]);
+
   return (
-    <div className="h-[520px] w-full rounded-lg overflow-hidden border border-border">
+    <div className="relative h-[520px] w-full rounded-lg overflow-hidden border border-border">
       <MapContainer
         center={USA_CENTER}
         zoom={USA_MIN_ZOOM}
@@ -86,33 +102,55 @@ export function DeliveryMap({ positions, selectedOrderId, onSelectOrder, theme }
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
           url={TILE_URLS[theme]}
         />
-        <FitBounds positions={positions} />
+        <FitBounds
+          points={displayPoints.map((p) => ({ lat: p.lat, lon: p.lon }))}
+          selectedOrderId={selectedOrderId}
+        />
 
-        {positions.map((event) => {
+        {displayPoints.map(({ event, lat, lon, stackSize }) => {
           const selected = event.order_id === selectedOrderId;
-          const color = STATUS_COLORS[event.event_type] ?? '#64748b';
+          const color = getEventTypeColor(event.event_type);
           return (
             <Marker
               key={`${event.order_id}-${event.event_id}`}
-              position={[event.loc_lat, event.loc_lon]}
-              icon={createIcon(color, selected)}
+              position={[lat, lon]}
+              icon={createIcon(color, selected, stackSize)}
               eventHandlers={{ click: () => onSelectOrder(event.order_id) }}
             >
               <Popup>
                 <strong>{event.order_id}</strong>
                 <br />
-                {formatEventType(event.event_type)}
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className="inline-block h-2.5 w-2.5 rounded-full border border-background"
+                    style={{ backgroundColor: color }}
+                  />
+                  {formatEventType(event.event_type)}
+                </span>
                 <br />
                 {event.city}, {event.state}
                 <br />
                 {new Date(event.event_timestamp).toLocaleString()}
                 <br />
                 Progress: {event.body?.progress_pct ?? 0}%
+                {stackSize > 1 && (
+                  <>
+                    <br />
+                    <span className="text-muted-foreground">{stackSize} orders at this spot</span>
+                  </>
+                )}
               </Popup>
             </Marker>
           );
         })}
       </MapContainer>
+
+      <DeliveryMapLegend />
+      {positions.length > 0 && (
+        <div className="pointer-events-none absolute top-3 right-3 z-[1000] rounded-md border border-border bg-background/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur-sm">
+          {positions.length.toLocaleString()} orders
+        </div>
+      )}
     </div>
   );
 }

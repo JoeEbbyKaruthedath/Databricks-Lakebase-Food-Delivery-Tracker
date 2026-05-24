@@ -13,13 +13,7 @@ import { DeliveryMap } from './DeliveryMap';
 import { DeliveryTimeline } from './DeliveryTimeline';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import type { DeliveryEvent, DeliveryMeta } from '../../types/delivery';
-import { formatEventType, toIsoTimestamp } from '../../types/delivery';
-
-function toLocalInputValue(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+import { formatEventType, getEventTypeColor, toIsoTimestamp } from '../../types/delivery';
 
 function buildQuery(params: Record<string, string | undefined>) {
   const qs = new URLSearchParams();
@@ -70,8 +64,7 @@ export function DeliveryPage() {
       const max = new Date(data.timeRange.max_ts).getTime();
       setMinTs(min);
       setMaxTs(max);
-      setScrubAt(max);
-      setWindowFrom(toLocalInputValue(data.timeRange.min_ts));
+      setScrubAt(min + (max - min) * 0.5);
     }
   }, []);
 
@@ -108,13 +101,22 @@ export function DeliveryPage() {
     return positions.filter((p) => p.order_id.includes(orderId.trim()));
   }, [positions, orderId]);
 
+  const eventTypeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const event of filteredPositions) {
+      counts.set(event.event_type, (counts.get(event.event_type) ?? 0) + 1);
+    }
+    return counts;
+  }, [filteredPositions]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
         <h2 className="text-2xl font-bold text-foreground">Delivery Tracker</h2>
         <p className="text-sm text-muted-foreground mt-1">
           {meta ? `${meta.totalEvents.toLocaleString()} events across the USA` : 'Loading...'}
-          {' — '}scrub the timeline to see every delivery at any point in time.
+          {' — '}each map dot is one order&apos;s latest stage at the scrubbed time. Move the timeline to see
+          different event types.
         </p>
       </div>
 
@@ -164,6 +166,17 @@ export function DeliveryPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
+          {minTs > 0 && maxTs > minTs && (
+            <DeliveryTimeline
+              minTs={minTs}
+              maxTs={maxTs}
+              value={scrubAt}
+              onChange={setScrubAt}
+              orderCount={filteredPositions.length}
+              eventTypeCounts={eventTypeCounts}
+            />
+          )}
+
           {loading ? (
             <Skeleton className="h-[520px] w-full rounded-lg" />
           ) : (
@@ -172,16 +185,6 @@ export function DeliveryPage() {
               selectedOrderId={selectedOrderId}
               onSelectOrder={handleSelectOrder}
               theme={mapTheme}
-            />
-          )}
-
-          {minTs > 0 && maxTs > minTs && (
-            <DeliveryTimeline
-              minTs={minTs}
-              maxTs={maxTs}
-              value={scrubAt}
-              onChange={setScrubAt}
-              orderCount={filteredPositions.length}
             />
           )}
         </div>
@@ -211,7 +214,14 @@ export function DeliveryPage() {
                     selectedOrderId === event.order_id ? 'bg-muted' : ''
                   }`}
                 >
-                  <div className="font-medium text-sm">{event.order_id}</div>
+                  <div className="flex items-center gap-2 font-medium text-sm">
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full border border-background"
+                      style={{ backgroundColor: getEventTypeColor(event.event_type) }}
+                      aria-hidden
+                    />
+                    {event.order_id}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {formatEventType(event.event_type)} · {event.city}, {event.state}
                   </div>

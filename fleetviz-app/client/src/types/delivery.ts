@@ -42,11 +42,39 @@ export const EVENT_TYPE_LABELS: Record<string, string> = {
   delivered: 'Delivered',
 };
 
+/** Distinct colors per event type — used on map markers and legend */
+export const EVENT_TYPE_COLORS: Record<string, string> = {
+  order_placed: '#6366f1',
+  driver_assigned: '#ec4899',
+  en_route_to_restaurant: '#a855f7',
+  at_restaurant: '#f59e0b',
+  picked_up: '#f97316',
+  in_transit: '#2563eb',
+  near_destination: '#14b8a6',
+  delivered: '#16a34a',
+};
+
+export const EVENT_TYPE_ORDER = [
+  'order_placed',
+  'driver_assigned',
+  'en_route_to_restaurant',
+  'at_restaurant',
+  'picked_up',
+  'in_transit',
+  'near_destination',
+  'delivered',
+] as const;
+
+export function getEventTypeColor(type: string) {
+  return EVENT_TYPE_COLORS[type] ?? '#64748b';
+}
+
 export function formatEventType(type: string) {
   return EVENT_TYPE_LABELS[type] ?? type.replaceAll('_', ' ');
 }
 
 export function toIsoTimestamp(localValue: string) {
   if (!localValue) return '';
-  return localValue.length === 16 ? `${localValue}:00.000Z` : new Date(localValue).toISOString();
+  const normalized = localValue.length === 16 ? `${localValue}:00` : localValue;
+  return new Date(normalized).toISOString();
 }
